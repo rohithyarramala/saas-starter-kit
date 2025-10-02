@@ -9,7 +9,7 @@ import {
   getBySubscriptionId,
   updateStripeSubscription,
 } from 'models/subscription';
-import { getByCustomerId } from 'models/team';
+import { getByCustomerId } from 'models/organization';
 
 export const config = {
   api: {

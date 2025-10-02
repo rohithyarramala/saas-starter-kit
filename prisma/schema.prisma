@@ -8,9 +8,10 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
-  OWNER
-  MEMBER
+  TEACHER
+  STUDENT
 }
 
 model Account {
@@ -63,38 +64,46 @@ model User {
   invalid_login_attempts Int       @default(0)
   lockedAt               DateTime?
 
-  teamMembers TeamMember[]
+  organizationMember OrganizationMember[]
   accounts    Account[]
   sessions    Session[]
   invitations Invitation[]
+
+  studentEnrollments   StudentEnrollment[]
+  teachingSubjects    Subject[]
+
+  EvaluationSubmissions EvaluationSubmission[]
+  Evaluation Evaluation[]
 }
 
-model Team {
+model Organization {
   id              String       @id @default(uuid())
   name            String
   slug            String       @unique
   domain          String?      @unique
-  defaultRole     Role         @default(MEMBER)
+  defaultRole     Role         @default(ADMIN)
   billingId       String?
   billingProvider String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @default(now())
-  members         TeamMember[]
+  members         OrganizationMember[]
   invitations     Invitation[]
   apiKeys         ApiKey[]
+
+  classes   Class[]
 
   @@index([billingId])
 }
 
-model TeamMember {
+model OrganizationMember {
   id        String   @id @default(uuid())
   teamId    String
   userId    String
-  role      Role     @default(MEMBER)
+  role      Role     @default(TEACHER)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
@@ -105,7 +114,7 @@ model Invitation {
   id             String   @id @default(uuid())
   teamId         String
   email          String?
-  role           Role     @default(MEMBER)
+  role           Role     @default(TEACHER)
   token          String   @unique
   expires        DateTime
   invitedBy      String
@@ -115,7 +124,7 @@ model Invitation {
   allowedDomains String[] @default([])
 
   user User @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, email])
   @@index([email])
@@ -140,7 +149,7 @@ model ApiKey {
   expiresAt  DateTime?
   lastUsedAt DateTime?
 
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@index([teamId])
 }
@@ -183,6 +192,112 @@ model Price {
 
   service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
+
+// education struture
+model Class {
+  id             String    @id @default(uuid())
+  name           String
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sections      Section[]
+  evaluation Evaluation[]
+
+}
+
+
+model Section {
+  id        String   @id @default(uuid())
+  name      String
+  classId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subjects Subject[]
+  students StudentEnrollment[]
+  evaluation Evaluation[]
+
+}
+
+model StudentEnrollment {
+  id        String   @id @default(uuid())
+  studentId String
+  sectionId String
+  createdAt DateTime @default(now())
+
+  student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, sectionId])
+}
+
+
+model Subject {
+  id        String   @id @default(uuid())
+  name      String
+  sectionId String
+  teacherId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  evaluation Evaluation[]
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+
+model Evaluation {
+  id          String   @id @default(uuid())
+  name        String
+  classId     String
+  sectionId   String
+  subjectId   String
+  createdBy   String
+  questionPdf String
+  answerKey   String?    // optional
+  createdAt   DateTime   @default(now())
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  creator User    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  submissions EvaluationSubmission[]
+}
+
+model EvaluationSubmission {
+  id           String   @id @default(uuid())
+  evaluationId String
+  studentId    String
+  scriptPdf    String?   // uploaded script
+  isAbsent     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  results    EvaluationResult[]
+}
+
+model EvaluationResult {
+  id           String   @id @default(uuid())
+  submissionId String
+  questionNo   Int
+  questionText String
+  maxMark      Int
+  aiMark       Int?
+  teacherMark  Int?
+  feedback     String?
+  createdAt    DateTime  @default(now())
+
+  submission EvaluationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, questionNo])
+}
+
+
 
 model jackson_store {
   key        String    @id(map: "_jackson_store_key") @db.VarChar(1500)

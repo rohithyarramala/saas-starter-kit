@@ -4,19 +4,16 @@ import { sendVerificationEmail } from '@/lib/email/sendVerificationEmail';
 import { isEmailAllowed } from '@/lib/email/utils';
 import env from '@/lib/env';
 import { ApiError } from '@/lib/errors';
-import { createTeam, getTeam, isTeamExists } from 'models/team';
+import { createOrganization, getOrganization, isOrganizationExists } from 'models/organization';
 import { createUser, getUser } from 'models/user';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { recordMetric } from '@/lib/metrics';
 import { getInvitation, isInvitationExpired } from 'models/invitation';
 import { validateRecaptcha } from '@/lib/recaptcha';
 import { slackNotify } from '@/lib/slack';
-import { Team } from '@prisma/client';
+import { Organization } from '@prisma/client';
 import { createVerificationToken } from 'models/verificationToken';
 import { userJoinSchema, validateWithSchema } from '@/lib/zod';
-
-// TODO:
-// Add zod schema validation
 
 export default async function handler(
   req: NextApiRequest,
@@ -45,7 +42,7 @@ export default async function handler(
 
 // Signup the user
 const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
-  const { name, password, team, inviteToken, recaptchaToken } = req.body;
+  const { name, password, organization, inviteToken, recaptchaToken } = req.body;
 
   await validateRecaptcha(recaptchaToken);
 
@@ -80,25 +77,30 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   if (await getUser({ email })) {
-    throw new ApiError(400, 'An user with this email already exists.');
+    throw new ApiError(400, 'A user with this email already exists.');
   }
 
-  // Check if team name is available
+
+  // Check if organization name is available
   if (!invitation) {
-    if (!team) {
-      throw new ApiError(400, 'A team name is required.');
+    if (!organization) {
+      throw new ApiError(400, 'An organization name is required.');
     }
 
-    const slug = slugify(team);
 
-    validateWithSchema(userJoinSchema, { team, slug });
+    const slug = slugify(organization);
 
-    const slugCollisions = await isTeamExists(slug);
+    validateWithSchema(userJoinSchema, { organization, slug });
+    
+    const slugCollisions = await isOrganizationExists(slug);
 
     if (slugCollisions > 0) {
-      throw new ApiError(400, 'A team with this slug already exists.');
+      throw new ApiError(400, 'An organization with this slug already exists.');
     }
   }
+
+
+  console.log("2");
 
   const user = await createUser({
     name,
@@ -107,18 +109,20 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
     emailVerified: invitation ? new Date() : null,
   });
 
-  let userTeam: Team | null = null;
 
-  // Create team if user is not invited
-  // So we can create the team with the user as the owner
+  console.log("3");
+  let userOrg: Organization | null = null;
+
+  // Create organization if user is not invited
+  // So we can create the org with the user as the owner
   if (!invitation) {
-    userTeam = await createTeam({
+    userOrg = await createOrganization({
       userId: user.id,
-      name: team,
-      slug: slugify(team),
+      name: organization,
+      slug: slugify(organization),
     });
   } else {
-    userTeam = await getTeam({ slug: invitation.team.slug });
+    userOrg = await getOrganization({ slug: invitation.organization.slug });
   }
 
   // Send account verification email
@@ -140,7 +144,7 @@ const handlePOST = async (req: NextApiRequest, res: NextApiResponse) => {
     fields: {
       Name: user.name,
       Email: user.email,
-      Team: userTeam?.name,
+      Organization: userOrg?.name,
     },
   });
 

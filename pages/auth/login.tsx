@@ -122,14 +122,6 @@ const Login: NextPageWithLayout<
         </Alert>
       )}
       <div className="rounded p-6 border">
-        <div className="flex gap-2 flex-wrap">
-          {authProviders.github && <GithubButton />}
-          {authProviders.google && <GoogleButton />}
-        </div>
-
-        {(authProviders.github || authProviders.google) &&
-          authProviders.credentials && <div className="divider">{t('or')}</div>}
-
         {authProviders.credentials && (
           <form onSubmit={formik.handleSubmit}>
             <div className="space-y-3">

@@ -1,6 +1,6 @@
 import { Role } from '@prisma/client';
 import { ApiError } from './errors';
-import { getTeamMember } from 'models/team';
+import { getTeamMember } from 'models/organization';
 
 export async function validateMembershipOperation(
   memberId: string,

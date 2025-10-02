@@ -1,6 +1,6 @@
 {
-  "name": "saas-starter-kit",
-  "version": "1.6.0",
+  "name": "autogradex",
+  "version": "1.0.0",
   "private": true,
   "prisma": {
     "seed": "ts-node ./prisma/seed.ts"

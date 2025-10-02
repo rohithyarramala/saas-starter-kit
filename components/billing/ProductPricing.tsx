@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 import { Button } from 'react-daisyui';
 import { useTranslation } from 'next-i18next';
 
-import useTeam from 'hooks/useTeam';
+import useTeam from 'hooks/useOrganization';
 import { Price } from '@prisma/client';
 import PaymentButton from './PaymentButton';
 import { Service, Subscription } from '@prisma/client';

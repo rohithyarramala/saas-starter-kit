@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { slugify } from '../server-common';
 import {
-  teamName,
+  organizationName,
   apiKeyId,
   slug,
   domain,
@@ -40,13 +40,13 @@ export const teamSlugSchema = z.object({
 });
 
 export const updateTeamSchema = z.object({
-  name: teamName,
+  name: organizationName,
   slug: slug.transform((slug) => slugify(slug)),
   domain,
 });
 
 export const createTeamSchema = z.object({
-  name: teamName,
+  name: organizationName,
 });
 
 export const updateAccountSchema = z.union([
@@ -68,7 +68,7 @@ export const updatePasswordSchema = z.object({
 
 export const userJoinSchema = z.union([
   z.object({
-    team: teamName,
+    organization: organizationName,
     slug,
   }),
   z.object({

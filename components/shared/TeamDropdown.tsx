@@ -5,7 +5,7 @@ import {
   RectangleStackIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import useTeams from 'hooks/useTeams';
+import useOrganizations from 'hooks/useOrganizations';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
@@ -15,11 +15,11 @@ import { maxLengthPolicies } from '@/lib/common';
 
 const TeamDropdown = () => {
   const router = useRouter();
-  const { teams } = useTeams();
+  const { organizations } = useOrganizations();
   const { data } = useSession();
   const { t } = useTranslation('common');
 
-  const currentTeam = (teams || []).find(
+  const currentTeam = (organizations || []).find(
     (team) => team.slug === router.query.slug
   );
 
@@ -27,10 +27,10 @@ const TeamDropdown = () => {
     {
       id: 2,
       name: t('teams'),
-      items: (teams || []).map((team) => ({
+      items: (organizations || []).map((team) => ({
         id: team.id,
         name: team.name,
-        href: `/teams/${team.slug}/settings`,
+        href: `/organizations/${team.slug}/settings`,
         icon: FolderIcon,
       })),
     },
@@ -53,13 +53,13 @@ const TeamDropdown = () => {
         {
           id: 'all-teams',
           name: t('all-teams'),
-          href: '/teams',
+          href: '/organizations',
           icon: RectangleStackIcon,
         },
         {
           id: 'new-team',
           name: t('new-team'),
-          href: '/teams?newTeam=true',
+          href: '/organizations?newTeam=true',
           icon: FolderPlusIcon,
         },
       ],

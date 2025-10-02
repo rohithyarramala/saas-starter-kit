@@ -10,8 +10,8 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import type { NextPageWithLayout } from 'types';
 import { authProviderEnabled } from '@/lib/auth';
 import { AuthLayout } from '@/components/layouts';
-import GithubButton from '@/components/auth/GithubButton';
-import GoogleButton from '@/components/auth/GoogleButton';
+// import GithubButton from '@/components/auth/GithubButton';
+// import GoogleButton from '@/components/auth/GoogleButton';
 import { JoinWithInvitation, Join } from '@/components/auth';
 import Head from 'next/head';
 import { Loading } from '@/components/shared';
@@ -51,14 +51,6 @@ const Signup: NextPageWithLayout<
         <title>{t('sign-up-title')}</title>
       </Head>
       <div className="rounded p-6 border">
-        <div className="flex gap-2 flex-wrap">
-          {authProviders.github && <GithubButton />}
-          {authProviders.google && <GoogleButton />}
-        </div>
-
-        {(authProviders.github || authProviders.google) &&
-          authProviders.credentials && <div className="divider">{t('or')}</div>}
-
         {authProviders.credentials && (
           <>
             {token ? (

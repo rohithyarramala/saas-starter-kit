@@ -12,10 +12,10 @@ const UserNavigation = ({ activePathname }: NavigationProps) => {
 
   const menus: MenuItem[] = [
     {
-      name: t('all-teams'),
-      href: '/teams',
+      name: t('all-organizations'),
+      href: '/organizations',
       icon: RectangleStackIcon,
-      active: activePathname === '/teams',
+      active: activePathname === '/organizations',
     },
     {
       name: t('account'),

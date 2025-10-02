@@ -17,7 +17,7 @@ import { randomUUID } from 'crypto';
 
 import { Role } from '@prisma/client';
 import { getAccount } from 'models/account';
-import { addTeamMember, getTeam } from 'models/team';
+import { addOrganizationMember, getOrganization } from 'models/organization';
 import { createUser, getUser } from 'models/user';
 import { verifyPassword } from '@/lib/auth';
 import { isEmailAllowed } from '@/lib/email/utils';
@@ -429,13 +429,13 @@ const linkAccount = async (user: User, account: Account) => {
 };
 
 const linkToTeam = async (profile: Profile, userId: string) => {
-  const team = await getTeam({
+  const team = await getOrganization({
     id: profile.requested.tenant,
   });
 
   // Sort out roles
   const roles = profile.roles || profile.groups || [];
-  let userRole: Role = team.defaultRole || Role.MEMBER;
+  let userRole: Role = team.defaultRole || Role.ADMIN;
 
   for (let role of roles) {
     if (env.groupPrefix) {
@@ -445,17 +445,17 @@ const linkToTeam = async (profile: Profile, userId: string) => {
     // Owner > Admin > Member
     if (
       role.toUpperCase() === Role.ADMIN &&
-      userRole.toUpperCase() !== Role.OWNER.toUpperCase()
+      userRole.toUpperCase() !== Role.ADMIN.toUpperCase()
     ) {
       userRole = Role.ADMIN;
       continue;
     }
 
-    if (role.toUpperCase() === Role.OWNER) {
-      userRole = Role.OWNER;
+    if (role.toUpperCase() === Role.ADMIN) {
+      userRole = Role.ADMIN;
       break;
     }
   }
 
-  await addTeamMember(team.id, userId, userRole);
+  await addOrganizationMember(team.id, userId, userRole);
 };

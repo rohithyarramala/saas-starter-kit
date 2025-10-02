@@ -1,6 +1,6 @@
 import { Error, Loading } from '@/components/shared';
-import { TeamTab } from '@/components/team';
-import useTeam from 'hooks/useTeam';
+import { TeamTab } from '@/components/organization';
+import useTeam from 'hooks/useOrganization';
 import { useTranslation } from 'next-i18next';
 import APIKeys from './APIKeys';
 import { TeamFeature } from 'types';

@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import env from '@/lib/env';
-import { updateTeam } from 'models/team';
+import { updateTeam } from 'models/organization';
 
 export const stripe = new Stripe(env.stripe.secretKey ?? '');
 
