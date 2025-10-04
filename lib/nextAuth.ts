@@ -65,7 +65,10 @@ if (isAuthProviderEnabled('credentials')) {
           return null;
         }
 
-        const user = await getUser({ email });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: { organizationMember: true },
+        });
 
         if (!user) {
           throw new Error('invalid-credentials');
@@ -96,10 +99,14 @@ if (isAuthProviderEnabled('credentials')) {
 
         await clearLoginAttempts(user);
 
+        // optionally pick the first org membership or implement logic for multiple orgs
+        const membership = user.organizationMember[0];
         return {
           id: user.id,
           name: user.name,
           email: user.email,
+          role: membership?.role || 'STUDENT', // default to STUDENT if no org
+          organizationId: membership?.teamId || null,
         };
       },
     })
@@ -356,10 +363,10 @@ export const getAuthOptions = (
       },
 
       async session({ session, token, user }) {
-        // When using JWT for sessions, the JWT payload (token) is provided.
-        // When using database sessions, the User (user) object is provided.
         if (session && (token || user)) {
           session.user.id = token?.sub || user?.id;
+          session.user.role = token?.role || user?.role || 'STUDENT';
+          session.user.organizationId = token?.organizationId || null;
         }
 
         if (user?.name) {
@@ -376,17 +383,39 @@ export const getAuthOptions = (
       },
 
       async jwt({ token, trigger, session, account }) {
+        // Existing code for signIn
         if (trigger === 'signIn' && account?.provider === 'boxyhq-idp') {
           const userByAccount = await adapter.getUserByAccount!({
             providerAccountId: account.providerAccountId,
             provider: account.provider,
           });
 
-          return { ...token, sub: userByAccount?.id };
+          // Fetch organization membership and role
+          const membership = await prisma.organizationMember.findFirst({
+            where: { userId: userByAccount?.id },
+          });
+
+          return {
+            ...token,
+            sub: userByAccount?.id,
+            role: membership?.role || 'STUDENT',
+            organizationId: membership?.teamId || null,
+          };
         }
 
+        // Update trigger example
         if (trigger === 'update' && 'name' in session && session.name) {
           return { ...token, name: session.name };
+        }
+
+        // Ensure existing tokens also carry role
+        if (!token.role && token.sub) {
+          const membership = await prisma.organizationMember.findFirst({
+            where: { userId: token.sub },
+          });
+
+          token.role = membership?.role || 'STUDENT';
+          token.organizationId = membership?.teamId || null;
         }
 
         return token;

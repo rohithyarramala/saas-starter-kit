@@ -9,6 +9,7 @@ declare module 'next-auth' {
     user: DefaultSession['user'] & {
       id: string;
       roles: { teamId: string; role: Role }[];
+      organizationId?: string | null;
     };
   }
 

@@ -2,31 +2,33 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import TeamNavigation from './TeamNavigation';
 import UserNavigation from './UserNavigation';
+import { useSession } from 'next-auth/react';
 
 const Navigation = () => {
   const { asPath, isReady, query } = useRouter();
-  const [activePathname, setActivePathname] = useState<null | string>(null);
+  const [activePathname, setActivePathname] = useState<string | null>(null);
+  const { data: session } = useSession();
 
-  const { slug } = query as { slug: string };
+  const { slug } = query as { slug?: string };
 
+  // Determine active path
   useEffect(() => {
     if (isReady && asPath) {
-      const activePathname = new URL(asPath, location.href).pathname;
-      setActivePathname(activePathname);
+      const pathname = new URL(asPath, location.href).pathname;
+      setActivePathname(pathname);
     }
   }, [asPath, isReady]);
 
-  const Navigation = () => {
-    if (slug) {
-      return <TeamNavigation activePathname={activePathname} slug={slug} />;
-    } else {
-      return <UserNavigation activePathname={activePathname} />;
-    }
-  };
+  // Determine role from session
+  const role = session?.user?.role || 'STUDENT'; // default to STUDENT if undefined
 
   return (
     <nav className="flex flex-1 flex-col">
-      <Navigation />
+      {slug ? (
+        <TeamNavigation activePathname={activePathname} slug={slug} />
+      ) : (
+        <UserNavigation activePathname={activePathname} role={role} />
+      )}
     </nav>
   );
 };
